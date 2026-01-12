@@ -1,0 +1,15 @@
+# AI Academic Scheduler - Dependencies
+
+# Core framework
+nicegui>=1.4.0
+
+# Data processing
+pandas>=2.0.0
+numpy>=1.24.0
+
+# PDF parsing (for future implementation)
+# tabula-py>=2.7.0
+# pdfplumber>=0.10.0
+
+# Additional utilities
+python-dateutil>=2.8.0
