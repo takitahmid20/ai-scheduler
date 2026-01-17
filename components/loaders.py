@@ -4,7 +4,7 @@ import asyncio
 def create_loading_spinner(text: str = 'Loading...'):
     """Create a loading spinner with text"""
     with ui.column().classes('items-center gap-3'):
-        ui.spinner(size='lg', color='blue')
+        ui.spinner(size='lg', color='orange')
         ui.label(text).classes('text-gray-600')
 
 def create_progress_bar(progress: float, text: str = ''):

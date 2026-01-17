@@ -2,7 +2,7 @@ from nicegui import ui
 
 def create_primary_button(text: str, on_click, icon: str = None, full_width: bool = False):
     """Create a primary action button"""
-    btn_class = 'bg-blue-600 text-white font-medium px-6 py-2 rounded-lg hover:bg-blue-700'
+    btn_class = 'bg-[#ff6900] text-white font-medium px-6 py-2 rounded-lg hover:bg-[#e65f00]'
     if full_width:
         btn_class += ' w-full'
     
@@ -25,7 +25,7 @@ def create_secondary_button(text: str, on_click, icon: str = None, full_width: b
 def create_outline_button(text: str, on_click, icon: str = None, full_width: bool = False):
     """Create an outlined button"""
     btn = ui.button(text, on_click=on_click).props('outline')
-    btn_class = 'border-2 border-blue-600 text-blue-600 font-medium px-6 py-2 rounded-lg hover:bg-blue-50'
+    btn_class = 'border-2 border-[#ff6900] text-[#ff6900] font-medium px-6 py-2 rounded-lg hover:bg-orange-50'
     if full_width:
         btn_class += ' w-full'
     btn.classes(btn_class)
@@ -49,5 +49,5 @@ def create_icon_button(icon: str, on_click, tooltip: str = None):
 
 def create_link_button(text: str, route: str):
     """Create a text link that navigates"""
-    btn = ui.button(text, on_click=lambda: ui.navigate.to(route)).props('flat').classes('text-blue-600 hover:text-blue-800')
+    btn = ui.button(text, on_click=lambda: ui.navigate.to(route)).props('flat').classes('text-[#ff6900] hover:text-[#e65f00]')
     return btn

@@ -8,6 +8,14 @@ from pages import (
     signin_page, signup_page, upload_page, 
     processing_page, results_page, profile_page
 )
+from pages.admin import (
+    admin_login_page, admin_dashboard_page, 
+    admin_upload_page, admin_manage_data_page
+)
+
+# Initialize database on startup
+from backend.database import init_db
+init_db()
 
 # =====================================================
 # APP CONFIGURATION
@@ -38,29 +46,72 @@ def signup():
 @ui.page('/upload')
 def upload():
     """Upload data page"""
-    # TODO: Add authentication check
-    # if not app.storage.user.get('logged_in'):
-    #     ui.navigate.to('/signin')
-    #     return
+    if not app.storage.user.get('logged_in'):
+        ui.navigate.to('/signin')
+        return
     upload_page()
 
 @ui.page('/processing')
 def processing():
     """Processing/analysis page"""
-    # TODO: Add authentication check
+    if not app.storage.user.get('logged_in'):
+        ui.navigate.to('/signin')
+        return
     processing_page()
 
 @ui.page('/results')
 def results():
     """Results page with generated schedules"""
-    # TODO: Add authentication check
+    if not app.storage.user.get('logged_in'):
+        ui.navigate.to('/signin')
+        return
     results_page()
 
 @ui.page('/profile')
 def profile():
     """User profile page"""
-    # TODO: Add authentication check
+    if not app.storage.user.get('logged_in'):
+        ui.navigate.to('/signin')
+        return
     profile_page()
+
+# =====================================================
+# ADMIN ROUTING
+# =====================================================
+
+@ui.page('/admin')
+def admin_index():
+    """Redirect to admin login"""
+    ui.navigate.to('/admin/login')
+
+@ui.page('/admin/login')
+def admin_login():
+    """Admin login page"""
+    admin_login_page()
+
+@ui.page('/admin/dashboard')
+def admin_dashboard():
+    """Admin dashboard"""
+    if not app.storage.user.get('logged_in') or not app.storage.user.get('is_admin'):
+        ui.navigate.to('/admin/login')
+        return
+    admin_dashboard_page()
+
+@ui.page('/admin/upload')
+def admin_upload():
+    """Admin upload data page"""
+    if not app.storage.user.get('logged_in') or not app.storage.user.get('is_admin'):
+        ui.navigate.to('/admin/login')
+        return
+    admin_upload_page()
+
+@ui.page('/admin/manage-data')
+def admin_manage_data():
+    """Admin manage data page"""
+    if not app.storage.user.get('logged_in') or not app.storage.user.get('is_admin'):
+        ui.navigate.to('/admin/login')
+        return
+    admin_manage_data_page()
 
 # =====================================================
 # APP STARTUP

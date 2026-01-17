@@ -1,4 +1,4 @@
-from nicegui import ui
+from nicegui import ui, app
 from components import create_header, create_footer
 import asyncio
 
@@ -13,9 +13,11 @@ analysis_steps = [
 
 def processing_page():
     """Processing page showing analysis progress"""
-    ui.colors(primary='#2563eb')
+    ui.colors(primary='#ff6900')
     
-    create_header('AI Academic Scheduler', 'Student Name')
+    user_name = app.storage.user.get('full_name', 'Student')
+    
+    create_header('AI Academic Scheduler', user_name)
     
     # Main container with better width
     with ui.column().classes('w-full items-center p-8'):
@@ -30,7 +32,7 @@ def processing_page():
             with ui.card().classes('w-full p-8 shadow-lg'):
                 # Animated spinner
                 with ui.column().classes('w-full items-center gap-4 mb-8'):
-                    ui.spinner(size='xl', color='blue')
+                    ui.spinner(size='xl', color='orange')
                 
                 # Progress steps
                 step_cards = ui.column().classes('gap-4 w-full mb-8')
@@ -48,7 +50,7 @@ def processing_page():
                 with progress_container:
                     with ui.row().classes('w-full justify-between items-center'):
                         ui.label('Overall Progress').classes('text-sm font-medium text-gray-700')
-                        progress_label = ui.label('0%').classes('text-sm font-bold text-blue-600')
+                        progress_label = ui.label('0%').classes('text-sm font-bold text-[#ff6900]')
                     progress_bar = ui.linear_progress(value=0).classes('w-full').props('size=8px color=primary')
         
         # Start processing simulation
@@ -77,8 +79,8 @@ async def start_processing(step_cards, progress_bar, progress_label):
                         ui.icon('check_circle', size='sm').classes('text-green-600')
                         ui.label(s).classes('text-gray-700 font-medium')
                     elif j == i:
-                        ui.spinner(size='sm', color='blue')
-                        ui.label(s).classes('text-blue-600 font-semibold')
+                        ui.spinner(size='sm', color='orange')
+                        ui.label(s).classes('text-[#ff6900] font-semibold')
                     else:
                         ui.icon('radio_button_unchecked', size='sm').classes('text-gray-400')
                         ui.label(s).classes('text-gray-500')

@@ -1,18 +1,24 @@
-from nicegui import ui
+from nicegui import ui, app
 
 def create_header(title: str, user_name: str = None):
     """Create app header with title and optional user info"""
     with ui.header().classes('bg-white border-b border-gray-200 shadow-sm'):
         with ui.row().classes('w-full items-center justify-between px-6 py-3'):
             with ui.row().classes('items-center gap-3'):
-                ui.icon('school', size='md').classes('text-blue-600')
+                ui.icon('school', size='md').classes('text-[#ff6900]')
                 ui.label(title).classes('text-xl font-bold text-gray-800')
             
             if user_name:
                 with ui.row().classes('items-center gap-3'):
-                    ui.icon('account_circle', size='sm').classes('text-gray-600')
-                    ui.label(user_name).classes('text-sm text-gray-700')
-                    ui.button('Logout', on_click=lambda: ui.navigate.to('/signin')).props('flat color=red-600')
+                    with ui.button(icon='account_circle', on_click=lambda: ui.navigate.to('/profile')).props('flat'):
+                        ui.label(user_name).classes('ml-2 text-gray-700')
+                    ui.button('Logout', on_click=handle_logout).props('flat color=red-600 icon=logout')
+
+def handle_logout():
+    """Handle user logout"""
+    app.storage.user.clear()
+    ui.notify('Logged out successfully', type='info')
+    ui.navigate.to('/signin')
 
 def create_footer():
     """Create app footer"""

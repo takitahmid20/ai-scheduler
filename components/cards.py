@@ -21,7 +21,7 @@ def create_schedule_card(schedule_data: dict, on_favorite=None):
     
     # Border color based on favorite
     if schedule_data.get('favorite'):
-        card.classes('border-blue-500')
+        card.classes('border-[#ff6900]')
     else:
         card.classes('border-gray-200')
     
@@ -35,13 +35,13 @@ def create_schedule_card(schedule_data: dict, on_favorite=None):
                     icon_name = 'star' if schedule_data.get('favorite') else 'star_border'
                     ui.button(icon=icon_name, on_click=lambda: on_favorite(schedule_data['id'])).props('flat color=yellow-600')
                 
-                ui.button(icon='download', on_click=lambda: download_schedule(schedule_data)).props('flat color=blue-600')
+                ui.button(icon='download', on_click=lambda: download_schedule(schedule_data)).props('flat color=orange')
         
         # Stats badges
         with ui.row().classes('gap-2 mb-4'):
             ui.badge(f"{schedule_data.get('conflicts', 0)} Conflicts", 
                     color='green' if schedule_data.get('conflicts', 0) == 0 else 'red')
-            ui.badge(f"{schedule_data.get('free_days', 0)} Free Days", color='blue')
+            ui.badge(f"{schedule_data.get('free_days', 0)} Free Days", color='orange')
             ui.badge(f"{len(schedule_data.get('courses', []))} Courses", color='purple')
         
         # Courses list
@@ -60,14 +60,14 @@ def create_analysis_step_card(step_name: str, completed: bool = False, active: b
             if completed:
                 ui.icon('check_circle', size='sm').classes('text-green-600')
             elif active:
-                ui.spinner(size='sm', color='blue')
+                ui.spinner(size='sm', color='orange')
             else:
                 ui.icon('radio_button_unchecked', size='sm').classes('text-gray-400')
             
             label_class = 'font-medium text-gray-800' if active or completed else 'text-gray-500'
             ui.label(step_name).classes(label_class)
 
-def create_stat_card(title: str, value: str, icon: str, color: str = 'blue'):
+def create_stat_card(title: str, value: str, icon: str, color: str = 'orange'):
     """Create a statistics card"""
     with ui.card().classes(f'p-6 bg-{color}-50 border-l-4 border-{color}-500 rounded-lg'):
         with ui.column().classes('gap-2'):
