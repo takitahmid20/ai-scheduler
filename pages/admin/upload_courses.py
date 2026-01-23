@@ -7,7 +7,16 @@ from nicegui import ui, app
 import os
 import tempfile
 from typing import List, Dict, Any
-from ai.course_processor.pdf_parser import PDFParser, CourseExtractor
+
+# Try to import PDF parser - it's optional
+try:
+    from ai.course_processor.pdf_parser import PDFParser, CourseExtractor
+    PDF_PARSER_AVAILABLE = True
+except ImportError:
+    PDFParser = None
+    CourseExtractor = None
+    PDF_PARSER_AVAILABLE = False
+
 from backend.database import SessionLocal
 from backend.models import Semester, CourseOffering, CourseList
 
@@ -83,6 +92,18 @@ class CourseUploadPage:
             
             # Main Content Area
             with ui.column().classes('flex-1 bg-gray-50 p-8 overflow-auto'):
+                # Check if PDF parser is available
+                if not PDF_PARSER_AVAILABLE:
+                    with ui.card().classes('w-full max-w-4xl p-8 bg-yellow-50 border-l-4 border-yellow-500'):
+                        with ui.row().classes('items-start gap-4'):
+                            ui.icon('warning', size='2rem').classes('text-yellow-600')
+                            with ui.column().classes('gap-2'):
+                                ui.label('PDF Upload Feature Unavailable').classes('text-xl font-bold text-gray-800')
+                                ui.label('The PDF parsing library (pdfplumber) is not installed. Please install it to enable PDF upload.').classes('text-gray-700')
+                                ui.label('Run: pip install pdfplumber').classes('font-mono bg-gray-800 text-white px-3 py-2 rounded mt-2')
+                                ui.label('Note: You can still manage course data manually in the "Manage Data" section.').classes('text-sm text-gray-600 mt-2')
+                    return
+                
                 # Upload Form Card
                 with ui.card().classes('w-full max-w-6xl p-8 shadow-lg'):
                     ui.label('Semester Information').classes('text-xl font-semibold text-gray-800 mb-4')
