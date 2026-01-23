@@ -3,14 +3,20 @@ AI Academic Scheduler - Main Application
 A NiceGUI-based system for generating optimal course schedules
 """
 
+import sys
+import os
+
+# Add current directory to Python path
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
 from nicegui import ui, app
 from pages import (
     signin_page, signup_page, upload_page, 
     processing_page, results_page, profile_page
 )
 from pages.admin import (
-    admin_login_page, admin_dashboard_page, 
-    admin_upload_page, admin_manage_data_page
+    admin_login_page, admin_dashboard_page,
+    admin_manage_data_page, admin_upload_courses_page
 )
 
 # Initialize database on startup
@@ -97,13 +103,7 @@ def admin_dashboard():
         return
     admin_dashboard_page()
 
-@ui.page('/admin/upload')
-def admin_upload():
-    """Admin upload data page"""
-    if not app.storage.user.get('logged_in') or not app.storage.user.get('is_admin'):
-        ui.navigate.to('/admin/login')
-        return
-    admin_upload_page()
+
 
 @ui.page('/admin/manage-data')
 def admin_manage_data():
@@ -113,22 +113,33 @@ def admin_manage_data():
         return
     admin_manage_data_page()
 
+@ui.page('/admin/upload-courses')
+def admin_upload_courses():
+    """Admin upload course offerings from PDF"""
+    if not app.storage.user.get('logged_in') or not app.storage.user.get('is_admin'):
+        ui.navigate.to('/admin/login')
+        return
+    admin_upload_courses_page()
+
 # =====================================================
 # APP STARTUP
 # =====================================================
 
 if __name__ in {"__main__", "__mp_main__"}:
-    # Configure NiceGUI
-    # For desktop app mode, set native=True
-    # For browser mode, set native=False
+    # Get port from environment variable (for cloud deployment) or default to 8080
+    port = int(os.environ.get('PORT', 8080))
+    
+    # Check if running in production (cloud) or local
+    is_production = os.environ.get('RAILWAY_ENVIRONMENT') or os.environ.get('RENDER')
     
     ui.run(
         title='AI Academic Scheduler',
-        port=8080,
-        reload=False,         # Disable reload for native mode
-        native=True,          # Run as desktop app (set to False for browser)
-        window_size=(1400, 900),  # Window size for native mode
-        fullscreen=False,     # Set True for fullscreen
-        frameless=False,      # Set True for frameless window
-        storage_secret='ai-academic-scheduler-secret-key-2026'
+        port=port,
+        host='0.0.0.0',       # Required for cloud deployment
+        reload=False,
+        native=not is_production,  # Desktop mode only in local, browser mode in production
+        window_size=(1400, 900) if not is_production else None,
+        fullscreen=False,
+        frameless=False,
+        storage_secret=os.environ.get('STORAGE_SECRET', 'ai-academic-scheduler-secret-key-2026')
     )

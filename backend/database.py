@@ -48,6 +48,6 @@ def get_db():
 # Initialize database tables
 def init_db():
     """Create all database tables"""
-    from .models import user, course, schedule  # Import all models
+    from .models import user, course, schedule, semester, course_offering, completed_course, course_list  # Import all models
     Base.metadata.create_all(bind=engine)
     print("✅ Database tables created successfully")

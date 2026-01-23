@@ -1,5 +1,8 @@
 from nicegui import ui, app
 from backend.constants import DEPARTMENTS
+from backend.database import SessionLocal
+from backend.models import CompletedCourse, CourseList, CourseOffering
+from sqlalchemy import distinct
 from components import (
     create_header, create_footer, create_page_container, create_card_container,
     create_input_field, create_select, create_primary_button, create_secondary_button
@@ -113,6 +116,22 @@ def profile_page():
                 with ui.button(icon='history', on_click=lambda: ui.navigate.to('/results')).props('outline color=secondary').classes('flex-1'):
                     ui.label('View Past Schedules').classes('ml-2')
         
+        # Completed Courses Card
+        with create_card_container():
+            with ui.row().classes('w-full justify-between items-center mb-4'):
+                ui.label('Completed Courses').classes('text-xl font-semibold text-gray-800')
+                ui.button(
+                    'Manage Completed Courses',
+                    icon='edit',
+                    on_click=lambda: show_completed_courses_dialog(user_student_id, user_department)
+                ).props('outline color=primary')
+            
+            ui.label('Mark courses you\'ve already completed to exclude them from schedule generation.').classes('text-sm text-gray-600 mb-3')
+            
+            # Display current completed courses
+            completed_container = ui.column().classes('w-full gap-2')
+            load_completed_courses_display(completed_container, user_student_id)
+        
         # Action buttons
         with ui.row().classes('w-full justify-between mt-8 gap-4'):
             with ui.row().classes('gap-3'):
@@ -150,3 +169,225 @@ def handle_logout():
     app.storage.user.clear()
     ui.notify('Logged out successfully', type='info')
     ui.navigate.to('/signin')
+
+
+def load_completed_courses_display(container, student_id):
+    """Load and display completed courses"""
+    container.clear()
+    
+    db = SessionLocal()
+    try:
+        # Get completed courses
+        completed = db.query(CompletedCourse).filter(
+            CompletedCourse.student_id == student_id
+        ).order_by(CompletedCourse.course_code).all()
+        
+        if not completed:
+            with container:
+                ui.label('No completed courses marked yet.').classes('text-sm text-gray-500 italic')
+        else:
+            # Get course details from course_list
+            completed_codes = [c.course_code for c in completed]
+            courses_info = db.query(CourseList).filter(
+                CourseList.course_code.in_(completed_codes)
+            ).all()
+            
+            # Create a map of course_code to title
+            course_titles = {c.course_code: c.title for c in courses_info}
+            
+            with container:
+                with ui.row().classes('w-full gap-2 flex-wrap'):
+                    for course in completed:
+                        title = course_titles.get(course.course_code, 'Unknown Course')
+                        ui.badge(f'{course.course_code} - {title}', color='green').classes('text-sm px-3 py-1')
+                
+                ui.label(f'Total: {len(completed)} courses').classes('text-xs text-gray-500 mt-2')
+    finally:
+        db.close()
+
+
+def show_completed_courses_dialog(student_id, department):
+    """Show dialog to manage completed courses"""
+    db = SessionLocal()
+    
+    try:
+        # Sync course_list from course_offering if empty
+        course_list_count = db.query(CourseList).count()
+        if course_list_count == 0:
+            # Get all unique courses from course_offering
+            unique_courses = db.query(
+                CourseOffering.course_code,
+                CourseOffering.title,
+                CourseOffering.credit
+            ).distinct(CourseOffering.course_code).all()
+            
+            # Populate course_list
+            for code, title, credit in unique_courses:
+                if code:  # Skip empty course codes
+                    new_course = CourseList(
+                        course_code=code,
+                        title=title,
+                        credit=credit
+                    )
+                    db.add(new_course)
+            
+            db.commit()
+            print(f"✅ Synced {len(unique_courses)} courses to course_list")
+        
+        # Get ALL courses from the master course_list table
+        all_courses = db.query(CourseList).order_by(CourseList.course_code).all()
+        
+        # Get student's completed courses
+        completed = db.query(CompletedCourse).filter(
+            CompletedCourse.student_id == student_id
+        ).all()
+        completed_codes = {c.course_code for c in completed}
+        
+        # Create course dictionary
+        course_dict = {}
+        for course in all_courses:
+            course_dict[course.course_code] = {
+                'title': course.title,
+                'credit': course.credit
+            }
+        
+        with ui.dialog() as dialog, ui.card().classes('w-full max-w-4xl p-6'):
+            ui.label('Manage Completed Courses').classes('text-2xl font-bold text-gray-800 mb-4')
+            ui.label('Select the courses you have already completed. These will be excluded from schedule generation.').classes('text-sm text-gray-600 mb-4')
+            
+            # Search box with button
+            with ui.row().classes('w-full gap-2 mb-4'):
+                search_input = ui.input('Search courses...').classes('flex-1').props('outlined dense')
+                ui.button('Search', icon='search', on_click=lambda: filter_courses()).props('color=primary')
+                ui.button('Clear', icon='clear', on_click=lambda: clear_search()).props('outline')
+            
+            # Stats display
+            stats_label = ui.label('').classes('text-sm text-gray-600 mb-2')
+            
+            # Scrollable course list
+            course_container = ui.column().classes('w-full gap-1 max-h-96 overflow-auto p-2 bg-gray-50 rounded')
+            
+            # Store checkbox references and their current states
+            checkboxes = {}
+            checkbox_states = {}  # Track current state of all checkboxes
+            
+            # Initialize states from completed courses
+            for code in course_dict.keys():
+                checkbox_states[code] = code in completed_codes
+            
+            def update_stats():
+                """Update the statistics display"""
+                checked_count = sum(1 for state in checkbox_states.values() if state)
+                stats_label.text = f'Showing {len(checkboxes)} courses | {checked_count} marked as completed'
+            
+            def on_checkbox_change(code):
+                """Handle checkbox state change"""
+                def handler(e):
+                    checkbox_states[code] = e.value
+                    update_stats()
+                return handler
+            
+            def clear_search():
+                """Clear search and show all courses"""
+                search_input.value = ''
+                filter_courses()
+            
+            def filter_courses():
+                """Filter courses based on search"""
+                course_container.clear()
+                checkboxes.clear()
+                search_term = search_input.value.lower() if search_input.value else ''
+                
+                count = 0
+                with course_container:
+                    for code, info in sorted(course_dict.items()):
+                        title = info['title']
+                        credit = info.get('credit', 0)
+                        
+                        # Filter by search term (search in code or title)
+                        if search_term:
+                            if (search_term not in code.lower() and 
+                                search_term not in title.lower()):
+                                continue
+                        
+                        count += 1
+                        with ui.row().classes('w-full items-center gap-2 p-2 hover:bg-white rounded border border-transparent hover:border-orange-200'):
+                            # Use the stored state
+                            cb = ui.checkbox(
+                                value=checkbox_states.get(code, False),
+                                on_change=on_checkbox_change(code)
+                            ).classes('flex-shrink-0')
+                            
+                            with ui.column().classes('flex-1 gap-0'):
+                                ui.label(f'{code} - {title}').classes('font-medium text-gray-800')
+                                if credit:
+                                    ui.label(f'Credits: {credit}').classes('text-xs text-gray-500')
+                            
+                            checkboxes[code] = cb
+                
+                # Show message if no results
+                if count == 0:
+                    with course_container:
+                        ui.label('No courses found matching your search.').classes('text-gray-500 italic p-4 text-center')
+                
+            filter_courses()
+            
+            # Update on search
+            search_input.on('input', filter_courses)
+            
+            ui.separator().classes('my-4')
+            
+            # Action buttons
+            with ui.row().classes('w-full justify-end gap-3'):
+                ui.button('Cancel', on_click=dialog.close).props('outline')
+                ui.button(
+                    'Save Changes',
+                    icon='save',
+                    on_click=lambda: save_completed_courses(
+                        dialog,
+                        student_id,
+                        department,
+                        checkbox_states
+                    )
+                ).props('color=primary')
+        
+        dialog.open()
+    finally:
+        db.close()
+
+
+def save_completed_courses(dialog, student_id, program, selections):
+    """Save completed courses to database"""
+    db = SessionLocal()
+    
+    try:
+        # Delete existing completed courses for this student
+        db.query(CompletedCourse).filter(
+            CompletedCourse.student_id == student_id
+        ).delete()
+        
+        # Add new selections
+        count = 0
+        for code, is_selected in selections.items():
+            if is_selected:
+                new_completed = CompletedCourse(
+                    student_id=student_id,
+                    course_code=code,
+                    program=program
+                )
+                db.add(new_completed)
+                count += 1
+        
+        db.commit()
+        ui.notify(f'Successfully saved {count} completed courses!', type='positive')
+        
+        # Refresh the display
+        dialog.close()
+        ui.navigate.reload()
+        
+    except Exception as e:
+        db.rollback()
+        ui.notify(f'Error saving completed courses: {str(e)}', type='negative')
+    finally:
+        db.close()
+

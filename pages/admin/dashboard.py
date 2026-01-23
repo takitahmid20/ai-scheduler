@@ -2,8 +2,10 @@ from nicegui import ui, app
 
 def handle_admin_logout():
     """Handle admin logout"""
-    app.storage.user.clear()
-    ui.notify('Logged out successfully', type='info')
+    # Clear all user session data
+    if hasattr(app.storage, 'user'):
+        app.storage.user.clear()
+    ui.notify('Logged out successfully', type='positive')
     ui.navigate.to('/admin/login')
 
 def admin_dashboard_page():
@@ -31,15 +33,16 @@ def admin_dashboard_page():
             ui.label('NAVIGATION').classes('text-xs text-gray-400 font-semibold mb-2 mt-4')
             
             nav_button('dashboard', 'Dashboard', '/admin/dashboard', active=True)
-            nav_button('upload_file', 'Upload Data', '/admin/upload')
+            nav_button('upload_file', 'Upload Courses', '/admin/upload-courses')
             nav_button('table_view', 'Manage Data', '/admin/manage-data')
-            nav_button('people', 'Students', '#')
-            nav_button('school', 'Courses', '#')
-            nav_button('schedule', 'Schedules', '#')
             
-            ui.label('SETTINGS').classes('text-xs text-gray-400 font-semibold mb-2 mt-6')
-            nav_button('settings', 'Settings', '#')
-            nav_button('help', 'Help & Support', '#')
+            # Spacer to push logout to bottom
+            ui.space()
+            
+            # Logout button at bottom
+            ui.separator().classes('my-4')
+            with ui.button(icon='logout', on_click=handle_admin_logout).props('flat').classes('w-full justify-start bg-red-600 hover:bg-red-700 text-white'):
+                ui.label('Logout').classes('ml-3 font-semibold')
         
         # Main Content Area
         with ui.column().classes('flex-1 bg-gray-50 p-8 overflow-auto'):
@@ -60,10 +63,8 @@ def admin_dashboard_page():
                 ui.label('Quick Actions').classes('text-xl font-bold text-gray-800 mb-4')
                 
                 with ui.row().classes('w-full gap-4'):
-                    action_card('upload_file', 'Upload Course Data', 'Upload department PDF files', '/admin/upload', 'blue')
+                    action_card('upload_file', 'Upload Course Data', 'Upload PDF with course offerings', '/admin/upload-courses', 'blue')
                     action_card('table_view', 'Manage Data', 'View and edit course data', '/admin/manage-data', 'green')
-                    action_card('analytics', 'View Analytics', 'Check system statistics', '#', 'purple')
-                    action_card('download', 'Export Data', 'Download reports', '#', 'orange')
             
             # Recent Activity
             with ui.card().classes('w-full p-6 shadow-lg'):
