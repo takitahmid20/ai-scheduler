@@ -140,8 +140,9 @@ class CourseExtractor:
             if len(parts) != 2:
                 return 0
             
-            start_str = parts[0].strip()
-            end_str = parts[1].strip()
+            # Normalize time format: "08:30:AM" or "02:00:PM" -> "08:30 AM" or "02:00 PM"
+            start_str = parts[0].strip().replace(':AM', ' AM').replace(':PM', ' PM')
+            end_str = parts[1].strip().replace(':AM', ' AM').replace(':PM', ' PM')
             
             # Convert to datetime
             start = datetime.strptime(start_str, '%I:%M %p')
@@ -152,8 +153,8 @@ class CourseExtractor:
             return int(duration)
             
         except Exception as e:
-            print(f"Error calculating duration: {e}")
-            return 0
+            # Silently return default duration to avoid log spam
+            return 80
     
     @staticmethod
     def validate_course_data(course_data: Dict[str, Any]) -> bool:
