@@ -141,5 +141,5 @@ if __name__ in {"__main__", "__mp_main__"}:
         window_size=(1400, 900) if not is_production else None,
         fullscreen=False,
         frameless=False,
-        storage_secret=os.environ.get('STORAGE_SECRET', 'ai-academic-scheduler-secret-key-2026')
+        storage_secret=os.environ.get('STORAGE_SECRET', 'ai-scheduler-prod-key-2026-xJ9mK2pL5qR8vB3nT7wY')
     )
